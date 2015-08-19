@@ -272,7 +272,7 @@ func (b *Buffer) updateFirst(fsize uint64) {
 	var (
 		start    = b.last % b.capacity
 		end      = (start + fsize) % b.capacity
-		wrapping = end < start
+		wrapping = end <= start
 	)
 
 	if start == end {
@@ -448,7 +448,7 @@ func (b *Buffer) DontNeed(c Cursor) error {
 	var (
 		start    = b.first % b.capacity
 		end      = c.offset % b.capacity
-		wrapping = end < start
+		wrapping = end <= start
 	)
 
 	if s := start % pageSize; s != 0 {
@@ -472,8 +472,9 @@ func (b *Buffer) DontNeed(c Cursor) error {
 
 func (b *Buffer) dontNeed(i, j uint64) error {
 	// Since i is rounded up to the nearest multiple of
-	// pageSize before the call, i > j is not an error.
-	if i > j {
+	// pageSize before the call, i ≥ j is not an error.
+	// i == j can happen when i = j = 0.
+	if i >= j {
 		return nil
 	}
 	return syscall.Madvise(b.data[i:j], syscall.MADV_DONTNEED)
