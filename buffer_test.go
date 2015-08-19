@@ -366,6 +366,46 @@ func TestOffByOneWrapping(t *testing.T) {
 	}
 }
 
+func TestAdviseOne(t *testing.T) {
+	n := os.Getpagesize()
+	b, err := New(n+total, bufFile)
+	if err != nil {
+		t.Fatalf("Failed to create buffer: %v", err)
+	}
+	defer b.Close()
+
+	data := make([]byte, n)
+	mustInsert(t, b.Insert(data))
+	_, c, err := b.ReadFirst(data)
+	if err != nil {
+		t.Fatalf("b.ReadFirst err = %v; want nil", err)
+	}
+	if err = b.DontNeed(c); err != nil {
+		t.Errorf("b.DontNeed = %v, want nil", err)
+	}
+}
+
+func TestAdviseTwo(t *testing.T) {
+	p := os.Getpagesize()
+	b, err := New(2*p, bufFile)
+	if err != nil {
+		t.Fatalf("Failed to create buffer: %v", err)
+	}
+	defer b.Close()
+
+	mustInsert(t, b.Insert(make([]byte, p-total)))
+	data := make([]byte, 2*p-total)
+	mustInsert(t, b.Insert(data))
+
+	_, c, err := b.ReadFirst(data)
+	if err != nil {
+		t.Fatalf("b.ReadFirst err = %v; want nil", err)
+	}
+	if err = b.DontNeed(c); err != nil {
+		t.Errorf("b.DontNeed = %v, want nil", err)
+	}
+}
+
 func mustInsert(t *testing.T, err error) {
 	if err != nil {
 		t.Fatalf("Insert failed: %v", err)
