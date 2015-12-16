@@ -7,7 +7,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/cloudflare/buffer/binary"
+	"github.com/ashishgandhi/buffer/binary"
 )
 
 // buffer file format related sizes
