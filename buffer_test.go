@@ -57,15 +57,32 @@ func TestLargeFrame(t *testing.T) {
 	}
 }
 
-func TestNewBuffer(t *testing.T) {
+func TestNewAndLoadBuffer(t *testing.T) {
 	n := 100
 	b, err := New(n, bufFile)
 	if err != nil {
 		t.Fatalf("Failed to create Buffer: %v", err)
 	}
-	defer b.Close()
 	if !bytes.Equal(b.data[n:], make([]byte, metadata)) {
 		t.Errorf("Expect 0s in metadata, got = %x", b.data[n:])
+	}
+
+	mustInsert(t, b.Insert([]byte("This is data")))
+	bufData := make([]byte, len(b.data))
+	copy(bufData, b.data)
+	b.Unmap()
+
+	if _, err = Load("🚫"); err == nil {
+		t.Errorf("Successfully loaded buffer from non-existent file")
+	}
+	b, err = Load(bufFile)
+	if err != nil {
+		os.Remove(bufFile)
+		t.Fatalf("Failed to load buf from file: %v", err)
+	}
+	defer b.Close()
+	if !bytes.Equal(b.data, bufData) {
+		t.Errorf("Load returned buf with data %x; want %x", b.data, bufData)
 	}
 }
 
