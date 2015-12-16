@@ -1,5 +1,3 @@
-// +build linux
-
 package buffer
 
 import (
@@ -107,7 +105,7 @@ func New(capacity int, filename string) (*Buffer, error) {
 	defer f.Close()
 
 	fsize := capacity + metadata
-	if err := syscall.Fallocate(int(f.Fd()), 0, 0, int64(fsize)); err != nil {
+	if err := syscall.Truncate(filename, int64(fsize)); err != nil {
 		return nil, err
 	}
 
@@ -436,50 +434,6 @@ var pageSize uint64
 
 func init() {
 	pageSize = uint64(os.Getpagesize())
-}
-
-// DontNeed advises the system about memory no longer needed.
-func (b *Buffer) DontNeed(c Cursor) error {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-
-	if c.offset < b.first {
-		// c not caught up.
-		return nil
-	}
-	var (
-		start    = b.first % b.capacity
-		end      = c.offset % b.capacity
-		wrapping = end <= start
-	)
-
-	if s := start % pageSize; s != 0 {
-		start = start - s + pageSize
-		// It is no longer guaranteed that start < b.capacity.
-		// Also, even when !wrapping it is now possible that
-		// start > end.
-	}
-
-	if !wrapping {
-		return b.dontNeed(start, end)
-	}
-
-	if start < b.capacity {
-		if err := b.dontNeed(start, b.capacity); err != nil {
-			return err
-		}
-	}
-	return b.dontNeed(0, end)
-}
-
-func (b *Buffer) dontNeed(i, j uint64) error {
-	// Since i is rounded up to the nearest multiple of
-	// pageSize before the call, i ≥ j is not an error.
-	// i == j can happen when i = j = 0.
-	if i >= j {
-		return nil
-	}
-	return syscall.Madvise(b.data[i:j], syscall.MADV_DONTNEED)
 }
 
 // Unmap unmaps the buffer file from memory.

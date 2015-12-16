@@ -4,5 +4,3 @@ This is a circular buffer implementation designed to be used with gigabyte sized
 Use `godoc` for [documentation](http://godoc.org/github.com/cloudflare/buffer).
 
 For now please check tests for examples.
-
-Only works on Linux at the moment.
