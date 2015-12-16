@@ -166,6 +166,12 @@ func TestBufferRead(t *testing.T) {
 		t.Errorf("b.ReadFirst offset = %d; want %d", c.offset, wantoff)
 	}
 
+	// Haven't written input[3] yet.
+	want := uint64(len(input[1])+len(input[2])) + 2*total
+	if remaining := b.Remaining(second); remaining != want {
+		t.Errorf("b.Reamining(c) = %d; want %d", remaining, want)
+	}
+
 	in = input[1]
 	cutoff := len(in) - 4
 	data = make([]byte, cutoff)
@@ -203,12 +209,22 @@ func TestBufferRead(t *testing.T) {
 		t.Errorf("b.Read offset = %d; want %d", c.offset, third.offset)
 	}
 
+	want = uint64(len(input[1])+len(input[2])+len(input[3])) + 3*total
+	if remaining := b.Remaining(second); remaining != want {
+		t.Errorf("b.Reamining(c) = %d; want %d", remaining, want)
+	}
+
 	in = make([]byte, n-total)
 	copy(in, []byte("Record where frame size equals capacity"))
 	mustInsert(t, b.Insert(in))
 
 	if length := b.Len(); length != uint64(len(in)) {
 		t.Errorf("b.Len() = %d; want %d", length, len(in))
+	}
+
+	want = uint64(len(in)) + total
+	if remaining := b.Remaining(second); remaining != want {
+		t.Errorf("b.Reamining(c) = %d; want %d", remaining, want)
 	}
 
 	_, _, err = b.Read(data, second)
@@ -226,6 +242,10 @@ func TestBufferRead(t *testing.T) {
 	}
 	if !bytes.Equal(data, in) {
 		t.Errorf("b.Read data = %x; want %x", data, in)
+	}
+
+	if remaining := b.Remaining(c); remaining != 0 {
+		t.Errorf("b.Reamining(c) = %d; want 0", remaining)
 	}
 
 	_, _, err = b.Read(data, c)
