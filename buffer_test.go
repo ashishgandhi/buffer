@@ -155,8 +155,8 @@ func TestBufferRead(t *testing.T) {
 	if err != nil {
 		t.Errorf("b.ReadFirst err = %v; want nil", err)
 	}
-	if c.seq != 1 {
-		t.Errorf("b.ReadFirst seq = %d; want 0", c.seq)
+	if seq := c.Seq(); seq != 1 {
+		t.Errorf("b.ReadFirst seq = %d; want 0", seq)
 	}
 	if !bytes.Equal(data, in) {
 		t.Errorf("b.ReadFirst data = %x; want %x", data, in)
@@ -185,8 +185,8 @@ func TestBufferRead(t *testing.T) {
 	if err != nil {
 		t.Errorf("b.ReadFirst err = %v; want nil", err)
 	}
-	if c.seq != 2 {
-		t.Errorf("b.ReadFirst seq = %d; want 2", c.seq)
+	if seq := c.Seq(); seq != 2 {
+		t.Errorf("b.ReadFirst seq = %d; want 2", seq)
 	}
 	if c.offset != third.offset {
 		t.Errorf("b.Read offset = %d; want %d", c.offset, third.offset)
@@ -221,8 +221,8 @@ func TestBufferRead(t *testing.T) {
 	if err != nil {
 		t.Errorf("b.Read err = %v; want nil", err)
 	}
-	if c.seq != 5 {
-		t.Errorf("b.Read seq = %d; want 5", c.seq)
+	if seq := c.Seq(); seq != 5 {
+		t.Errorf("b.Read seq = %d; want 5", seq)
 	}
 	if !bytes.Equal(data, in) {
 		t.Errorf("b.Read data = %x; want %x", data, in)
@@ -249,8 +249,8 @@ func TestBufferRead(t *testing.T) {
 	if err != nil {
 		t.Errorf("b.Read err = %v; want nil", err)
 	}
-	if c.seq != 6 {
-		t.Errorf("b.Read seq = %d; want 6", c.seq)
+	if seq := c.Seq(); seq != 6 {
+		t.Errorf("b.Read seq = %d; want 6", seq)
 	}
 	if !bytes.Equal(data, in) {
 		t.Errorf("b.Read data = %x; want %x", data, in)
