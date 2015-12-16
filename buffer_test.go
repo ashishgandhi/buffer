@@ -10,11 +10,11 @@ import (
 	"testing"
 )
 
+var bufFile = filepath.Join(os.TempDir(), "buffer-test")
+
 func init() {
 	os.Remove(bufFile)
 }
-
-var bufFile = filepath.Join(os.TempDir(), "buffer-test")
 
 func TestFrame(t *testing.T) {
 	data := []byte("much data. such big. wow.")
@@ -32,6 +32,24 @@ func TestFrame(t *testing.T) {
 	want := len(data) + size + sequence
 	if int(fsize) != want {
 		t.Errorf("f.size() = %d, want %d", fsize, want)
+	}
+
+	data = make([]byte, maxBytes+1)
+	if _, err = newFrame(0, data); err != errFrameTooBig {
+		t.Errorf("newFrame err = %v; want %v", err, errFrameTooBig)
+	}
+
+	f = make([]byte, total-1)
+	if data = f.data(); len(data) != 0 {
+		// Frame that is smaller than its
+		// header size cannot have data.
+		t.Errorf("f.data() = %x; want nil", data)
+	}
+	if seq := f.seq(); seq != 0 {
+		// Frame that is smaller than its
+		// header size cannot have data
+		// and should not ret seq number.
+		t.Errorf("f.seq() = %d; want nil", seq)
 	}
 }
 
