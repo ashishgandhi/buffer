@@ -102,6 +102,11 @@ func TestNewAndLoadBuffer(t *testing.T) {
 	if !bytes.Equal(b.data, bufData) {
 		t.Errorf("Load returned buf with data %x; want %x", b.data, bufData)
 	}
+
+	_, err = New(n, bufFile)
+	if err != ErrFileExists {
+		t.Errorf("Should fail to create new buffer if file already exists")
+	}
 }
 
 func TestBufferInsert(t *testing.T) {
