@@ -1,6 +1,6 @@
 # Circular Buffer
 
-[![GoDoc](https://godoc.org/github.com/ashishgandhi/buffer?status.png)](https://godoc.org/github.com/ashishgandhi/buffer)
+[![GoDoc](https://godoc.org/github.com/ashishgandhi/buffer?status.svg)](https://godoc.org/github.com/ashishgandhi/buffer)
 [![Build Status](https://travis-ci.org/ashishgandhi/buffer.svg?branch=master)](https://travis-ci.org/ashishgandhi/buffer)
 [![Coverage Status](https://codecov.io/github/ashishgandhi/buffer/coverage.svg?branch=master)](https://codecov.io/github/ashishgandhi/buffer?branch=master)
 
