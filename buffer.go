@@ -380,7 +380,7 @@ func (b *Buffer) Read(data []byte, c Cursor) (n int, next Cursor, err error) {
 	}
 
 	f := b.frame(offset)
-	if f.size() == 0 || f.seq() != seq {
+	if f.size() == 0 || f.seq() != seq || offset < b.first {
 		return b.readFirst(data)
 	}
 
