@@ -472,6 +472,40 @@ func mustInsert(t *testing.T, err error) {
 	}
 }
 
+func TestBrokenCursorBeforeFirstRecord(t *testing.T) {
+	var (
+		beforeFirstRecord1   = []byte{1,2,3}
+		beforeFirstRecord2   = []byte{1,2,3,4,5,6,7,8,9}
+		firstRecord = []byte{5}
+		lastRecord = []byte{5,6}
+		data = make([]byte, 1<<10)
+	)
+
+	n := len(beforeFirstRecord2) + total
+	b, err := New(n, bufFile)
+
+	if err != nil {
+		t.Fatalf("Failed to create buffer: %v", err)
+	}
+	defer b.Close()
+
+	b.Insert(beforeFirstRecord1)
+	_,c,_ := b.ReadFirst(data)
+	b.Insert(beforeFirstRecord2)
+	b.Read(data,c)
+	b.Insert(firstRecord)
+	b.Insert(lastRecord)
+	_,_,err = b.Read(data,Cursor{7,3})
+
+	if err != nil {
+		t.Fatalf("b.Read err = %v; want read first record", err)
+	}
+
+	if !bytes.Equal(data[:len(firstRecord)], firstRecord) {
+		t.Errorf("Read got %x; want %x", data, firstRecord)
+	}
+}
+
 func BenchmarkRead(b *testing.B) {
 	var input [][]byte
 	isize := 1024
