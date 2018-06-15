@@ -8,7 +8,6 @@ import (
 	"syscall"
 
 	"github.com/ashishgandhi/buffer/binary"
-	"log"
 )
 
 // buffer file format related sizes
@@ -385,13 +384,7 @@ func (b *Buffer) Read(data []byte, c Cursor) (n int, next Cursor, err error) {
 		return b.readFirst(data)
 	}
 
-	n1, c1, err := b.readOffset(data, offset)
-	if c1.seq == 0 {
-		log.Printf("f.size()=%d, f.seq()=%d, n1=%d, c1.seq=%d, c1.offset=%d, err=%v, offset=%d, seq=%v, b.filename", f.size(), f.seq(), n1, c1.seq, c1.offset, err, offset, seq, b.filename)
-		b.Unmap()
-		panic("Encountered zero sequence number.")
-	}
-	return n1, c1, err
+	return b.readOffset(data, offset)
 }
 
 // ReadFirst reads the first (oldest) record in b. It's return values are analogous

@@ -483,7 +483,6 @@ func TestBrokenCursorBeforeFirstRecord(t *testing.T) {
 
 	n := len(beforeFirstRecord2) + total
 	b, err := New(n, bufFile)
-
 	if err != nil {
 		t.Fatalf("Failed to create buffer: %v", err)
 	}
@@ -496,7 +495,6 @@ func TestBrokenCursorBeforeFirstRecord(t *testing.T) {
 	b.Insert(firstRecord)
 	b.Insert(lastRecord)
 	_,_,err = b.Read(data,Cursor{7,3})
-
 	if err != nil {
 		t.Fatalf("b.Read err = %v; want read first record", err)
 	}
