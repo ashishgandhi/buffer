@@ -482,17 +482,17 @@ func mustInsert(t *testing.T, err error) {
 // The data in the test was chosen to satisfy those conditions
 func TestBrokenCursorBeforeFirstRecord(t *testing.T) {
 	var (
-		firstRecord = []byte{1, 2, 3}
-		lastRecord  = []byte{1, 2, 3, 4, 5}
-		rec         = []byte{5, 6, 7, 12, 0, 0, 0, 1}
-		data        = make([]byte, 1<<10)
+		firstRecord       = []byte{1, 2, 3}
+		secondRecord      = []byte{1, 2, 3, 4, 5}
+		overlappingRecord = []byte{5, 6, 7, 12, 0, 0, 0, 1}
+		data              = make([]byte, 1<<10)
 	)
 
 	// Initial buffer state: buffer size= 3 + 12 + 5 + 12 = 32 bytes
 	// |0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|
 	// ^rc, wc
 	// read and write cursors point at the beggining of the buffer (offset:0, seq:0)
-	n := len(firstRecord) + total + len(lastRecord) + total
+	n := len(firstRecord) + total + len(secondRecord) + total
 	b, err := New(n, bufFile)
 	if err != nil {
 		t.Fatalf("Failed to create buffer: %v", err)
@@ -512,7 +512,7 @@ func TestBrokenCursorBeforeFirstRecord(t *testing.T) {
 	// read cursor remains the same (offset:15, seq:1)
 	// write cursor points at the begging of the circular buffer,
 	// because buffer is full (offset:0, seq:2)
-	b.Insert(lastRecord)
+	b.Insert(secondRecord)
 
 	// inserts the overlapping record: 4 bytes header, 8 bytes sequence number, 8 bytes data
 	// |20|0|0|0|0|0|0|0|0|0|0|2|5|6|7|12|0|0|0|1|0|0|0|0|0|0|0|1|2|3|4|5|
@@ -520,7 +520,7 @@ func TestBrokenCursorBeforeFirstRecord(t *testing.T) {
 	// read cursor remains the same (offset:15, seq:1) and now it's broken,
 	// because it points not on the header, but on the data of the sequence 2
 	// write cursor points at (offset:21, seq:3)
-	b.Insert(rec)
+	b.Insert(overlappingRecord)
 
 	// reads |12|0|0|0|1|0|0|0|0|0|0|0| record which is broken, because
 	// overlapped by previous record
@@ -529,9 +529,9 @@ func TestBrokenCursorBeforeFirstRecord(t *testing.T) {
 		t.Fatalf("b.Read err = %v; want read first record", err)
 	}
 
-	readData := data[:len(rec)]
-	if !bytes.Equal(readData, rec) {
-		t.Errorf("Read got %x; want %x", readData, rec)
+	readData := data[:len(overlappingRecord)]
+	if !bytes.Equal(readData, overlappingRecord) {
+		t.Errorf("Read got %x; want %x", readData, overlappingRecord)
 	}
 }
 
