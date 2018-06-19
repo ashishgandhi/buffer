@@ -49,6 +49,7 @@ func (f frame) size() uint32 {
 	if len(f) < size {
 		return 0
 	}
+
 	return binary.GetLittleEndianUint32(f, 0)
 }
 
@@ -83,7 +84,7 @@ type Buffer struct {
 
 	// These are start offsets for first and
 	// last records maintained by the buffer.
-	// They are abosulte and not wrapped.
+	// They are absolute and not wrapped.
 	first uint64
 	last  uint64
 
@@ -380,7 +381,13 @@ func (b *Buffer) Read(data []byte, c Cursor) (n int, next Cursor, err error) {
 	}
 
 	f := b.frame(offset)
-	if f.size() == 0 || f.seq() != seq {
+
+	// checking that cursor points to the existing record, if not - returns the very first record
+	// It's considered that record exists when
+	// - it has a size greater than zero,
+	// - sequences of the record and cursor match
+	// - record offset is between first and last
+	if f.size() == 0 || f.seq() != seq || offset < b.first {
 		return b.readFirst(data)
 	}
 

@@ -472,6 +472,69 @@ func mustInsert(t *testing.T, err error) {
 	}
 }
 
+// This test covers a case when buffer starts circling and consumer tries
+// to read the record which is already overlapped by another record.
+// To reproduce that few conditions must be met:
+// - read cursor should point to the body of the overlapping record, but not header
+// - read cursor should point on first of 4 bytes which represent the length of the record
+// in little Endian notation and must be >= 12
+// - next 8 bytes must be uint number equals to cursor sequence number
+// The data in the test was chosen to satisfy those conditions
+func TestBrokenCursorBeforeFirstRecord(t *testing.T) {
+	var (
+		firstRecord       = []byte{1, 2, 3}
+		secondRecord      = []byte{1, 2, 3, 4, 5}
+		overlappingRecord = []byte{5, 6, 7, 12, 0, 0, 0, 1}
+		data              = make([]byte, 1<<10)
+	)
+
+	// Initial buffer state: buffer size= 3 + 12 + 5 + 12 = 32 bytes
+	// |0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|
+	// ^rc, wc
+	// read and write cursors point at the beggining of the buffer (offset:0, seq:0)
+	n := len(firstRecord) + total + len(secondRecord) + total
+	b, err := New(n, bufFile)
+	if err != nil {
+		t.Fatalf("Failed to create buffer: %v", err)
+	}
+	defer b.Close()
+
+	// inserts the first record: 4 bytes header, 8 bytes sequence number, 3 bytes data
+	// |15|0|0|0|0|0|0|0|0|0|0|0|1|2|3|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|
+	//                                ^rc, wc
+	// read and write cursors point at the next record position (offset:15, seq:1)
+	b.Insert(firstRecord)
+	_, c, _ := b.ReadFirst(data)
+
+	// inserts the second record: 4 bytes header, 8 bytes sequence number, 5 bytes data
+	// |15|0|0|0|0|0|0|0|0|0|0|0|1|2|3|17|1|0|0|0|0|0|0|0|0|0|0|1|2|3|4|5|
+	// ^wc                            ^rc
+	// read cursor remains the same (offset:15, seq:1)
+	// write cursor points at the begging of the circular buffer,
+	// because buffer is full (offset:0, seq:2)
+	b.Insert(secondRecord)
+
+	// inserts the overlapping record: 4 bytes header, 8 bytes sequence number, 8 bytes data
+	// |20|0|0|0|0|0|0|0|0|0|0|2|5|6|7|12|0|0|0|1|0|0|0|0|0|0|0|1|2|3|4|5|
+	//                                 ^rc       ^wc
+	// read cursor remains the same (offset:15, seq:1) and now it's broken,
+	// because it points not on the header, but on the data of the sequence 2
+	// write cursor points at (offset:21, seq:3)
+	b.Insert(overlappingRecord)
+
+	// reads |12|0|0|0|1|0|0|0|0|0|0|0| record which is broken, because
+	// overlapped by previous record
+	_, c, _ = b.Read(data, c)
+	if c.seq == 0 {
+		t.Fatalf("b.Read err = %v; want read first record", err)
+	}
+
+	readData := data[:len(overlappingRecord)]
+	if !bytes.Equal(readData, overlappingRecord) {
+		t.Errorf("Read got %x; want %x", readData, overlappingRecord)
+	}
+}
+
 func BenchmarkRead(b *testing.B) {
 	var input [][]byte
 	isize := 1024
