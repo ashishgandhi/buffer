@@ -12,7 +12,7 @@ func TestLittleEndian(t *testing.T) {
 
 	want := []byte{0x00, 0x00, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e}
 	if !bytes.Equal(buffer, want) {
-		t.Fatal("buffer = %x; want = %x", buffer, want)
+		t.Fatalf("buffer = %x; want = %x", buffer, want)
 	}
 
 	x := GetLittleEndianUint32(buffer, 2)
